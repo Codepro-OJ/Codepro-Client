@@ -51,6 +51,6 @@ Token tài khoản được lưu bằng Electron `safeStorage` khi hệ điều 
 
 ## Kho mã liên quan
 
-Máy chủ và web: https://github.com/hongquang699/Codepro-Web
+Máy chủ và web: https://github.com/Codepro-OJ/Codepro-Web
 
 Chạy web trước tại cổng 8888. Xuất bản bản portable bằng đường dẫn kho web ở lệnh trên hoặc biến CODEPRO_WEB_ROOT.
