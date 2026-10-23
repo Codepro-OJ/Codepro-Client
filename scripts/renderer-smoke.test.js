@@ -243,7 +243,7 @@ test('statement renderer keeps examples and math readable while sanitizing HTML'
   const katex = { render: (expression, target) => { target.dataset.rendered = expression; } };
   try {
     const box = window.document.getElementById('statement');
-    const aplus = fs.readFileSync(path.join(__dirname, '..', '..', '..', 'problem-data', 'problems', 'APLUS', 'statement', 'statement.md'), 'utf8');
+    const aplus = fs.readFileSync(path.join(__dirname, 'fixtures', 'problems', 'APLUS', 'statement', 'statement.md'), 'utf8');
     window.CodeProStatement.render(aplus, box, katex);
     assert.match(box.textContent, /Cho hai số nguyên/);
     assert.equal(box.querySelectorAll('pre code').length, 4);
@@ -263,7 +263,7 @@ test('all local problem statements render without dropping their content', () =>
   window.eval(fs.readFileSync(path.join(renderer, 'vendor', 'statement.bundle.js'), 'utf8'));
   const box = window.document.getElementById('statement');
   const katex = { render: (expression, target) => { target.dataset.rendered = expression; } };
-  const root = path.join(__dirname, '..', '..', '..', 'problem-data', 'problems');
+  const root = path.join(__dirname, 'fixtures', 'problems');
   let count = 0;
   try {
     for (const code of fs.readdirSync(root)) {
