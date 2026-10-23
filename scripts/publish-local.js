@@ -1,0 +1,16 @@
+const fs = require('node:fs');
+const path = require('node:path');
+const crypto = require('node:crypto');
+const pkg = require('../package.json');
+const name = `CodeProOJ-Client-${pkg.version}.exe`;
+const source = path.join(__dirname, '..', 'dist', name);
+const webRoot = process.env.CODEPRO_WEB_ROOT || process.argv[2];
+if (!webRoot) throw new Error('Set CODEPRO_WEB_ROOT or pass the Codepro-Web directory: npm run publish:local -- C:/path/Codepro-Web');
+const destination = path.resolve(webRoot, 'frontend', 'downloads');
+if (!fs.existsSync(source)) throw new Error(`Chưa có bản cài: ${source}. Chạy npm run dist:win trước.`);
+fs.mkdirSync(destination, { recursive: true });
+fs.copyFileSync(source, path.join(destination, name));
+const bytes = fs.readFileSync(source);
+const manifest = { version: pkg.version, platform: 'Windows x64', file: name, bytes: bytes.length, sha256: crypto.createHash('sha256').update(bytes).digest('hex') };
+fs.writeFileSync(path.join(destination, 'client-manifest.json'), JSON.stringify(manifest, null, 2) + '\n');
+console.log(`Đã đặt bản portable tại ${path.join(destination, name)} (${(bytes.length / 1024 / 1024).toFixed(1)} MB)`);
