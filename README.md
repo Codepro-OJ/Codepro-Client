@@ -1,6 +1,7 @@
 # CodeProOJ Client (Windows)
 
 Ứng dụng desktop độc lập cho CodeProOJ. Mã được viết mới; gói TMATH 1.0.7 chỉ dùng để khảo sát chức năng.
+Repository này được xuất bản tại [Codepro-OJ/Codepro-Client](https://github.com/Codepro-OJ/Codepro-Client). Web trực tuyến nằm tại [Codepro-Web](https://github.com/Codepro-OJ/Codepro-Web); hệ thống thi qua LAN nằm tại [Submit-Offline](https://github.com/Codepro-OJ/Submit-Offline).
 
 ## Chức năng bản 1.2.6
 
@@ -52,5 +53,7 @@ Token tài khoản được lưu bằng Electron `safeStorage` khi hệ điều 
 ## Kho mã liên quan
 
 Máy chủ và web: https://github.com/Codepro-OJ/Codepro-Web
+
+OJ độc lập cho kỳ thi qua LAN: https://github.com/Codepro-OJ/Submit-Offline
 
 Chạy web trước tại cổng 8888. Xuất bản bản portable bằng đường dẫn kho web ở lệnh trên hoặc biến CODEPRO_WEB_ROOT.
