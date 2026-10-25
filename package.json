@@ -65,7 +65,7 @@
       "target": "deb",
       "category": "Development",
       "maintainer": "CodeProOJ",
-      "artifactName": "CodeProOJ-Client-${version}-linux-${arch}.${ext}"
+      "artifactName": "CodeProOJ-Client-${version}-linux-x64.${ext}"
     }
   }
 }
