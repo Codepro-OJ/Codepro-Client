@@ -5,7 +5,13 @@ const os = require('node:os');
 const { spawn } = require('node:child_process');
 const WebSocket = require('ws');
 
-const API_ORIGIN = 'http://127.0.0.1:8888';
+const configuredOrigin = new URL(process.env.CODEPRO_API_ORIGIN || 'http://127.0.0.1:8888');
+if (!['http:', 'https:'].includes(configuredOrigin.protocol) ||
+    configuredOrigin.username || configuredOrigin.password ||
+    configuredOrigin.pathname !== '/' || configuredOrigin.search || configuredOrigin.hash) {
+  throw new Error('CODEPRO_API_ORIGIN phải là địa chỉ gốc http(s) hợp lệ.');
+}
+const API_ORIGIN = configuredOrigin.origin;
 const allowedPaths = new Map([
   ['problems', '/api/v2/problems'],
   ['problem', '/api/v2/problem/'],
@@ -75,6 +81,11 @@ function accountFile() { return path.join(app.getPath('userData'), 'account.json
 function draftFile() { return path.join(app.getPath('userData'), 'drafts.json'); }
 function compilerFile() { return path.join(app.getPath('userData'), 'compilers.json'); }
 
+function secureStorageAvailable() {
+  return safeStorage.isEncryptionAvailable() &&
+    (process.platform !== 'linux' || safeStorage.getSelectedStorageBackend() !== 'basic_text');
+}
+
 async function compilerPaths() {
   const saved = await readJson(compilerFile(), {});
   return { cpp: typeof saved.cpp === 'string' ? saved.cpp : '', python: typeof saved.python === 'string' ? saved.python : '' };
@@ -98,7 +109,11 @@ async function writeJson(file, value) {
 
 async function loadAccount() {
   const saved = await readJson(accountFile(), null);
-  if (!saved || !saved.secret || !safeStorage.isEncryptionAvailable()) return;
+  if (!secureStorageAvailable()) {
+    await fs.rm(accountFile(), { force: true });
+    return;
+  }
+  if (!saved || !saved.secret) return;
   try {
     token = safeStorage.decryptString(Buffer.from(saved.secret, 'base64'));
     account = saved.user || null;
@@ -108,8 +123,10 @@ async function loadAccount() {
 async function saveAccount(user, value) {
   token = value;
   account = user;
-  if (safeStorage.isEncryptionAvailable()) {
+  if (secureStorageAvailable()) {
     await writeJson(accountFile(), { user, secret: safeStorage.encryptString(value).toString('base64') });
+  } else {
+    await fs.rm(accountFile(), { force: true });
   }
 }
 

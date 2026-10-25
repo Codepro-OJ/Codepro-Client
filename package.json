@@ -1,8 +1,8 @@
 {
   "name": "codeprooj-client",
-  "version": "1.2.6",
+  "version": "1.2.7",
   "private": true,
-  "description": "CodeProOJ desktop client for Windows",
+  "description": "CodeProOJ desktop client for Windows, macOS and Linux",
   "main": "main.js",
   "scripts": {
     "build:editor": "node scripts/build-editor.js",
@@ -12,6 +12,10 @@
     "test": "node --test scripts/renderer-smoke.test.js",
     "predist:win": "npm run build:editor",
     "dist:win": "electron-builder --win portable",
+    "predist:mac": "npm run build:editor",
+    "dist:mac": "electron-builder --mac dmg --x64 --arm64",
+    "predist:linux": "npm run build:editor",
+    "dist:linux": "electron-builder --linux deb --x64",
     "publish:local": "node scripts/publish-local.js"
   },
   "devDependencies": {
@@ -49,6 +53,19 @@
       "icon": "renderer/brand-icon.ico",
       "target": "portable",
       "artifactName": "CodeProOJ-Client-${version}.${ext}"
+    },
+    "mac": {
+      "icon": "renderer/brand-mark.svg",
+      "target": "dmg",
+      "artifactName": "CodeProOJ-Client-${version}-mac-${arch}.${ext}",
+      "minimumSystemVersion": "13.0"
+    },
+    "linux": {
+      "icon": "build/icons",
+      "target": "deb",
+      "category": "Development",
+      "maintainer": "CodeProOJ",
+      "artifactName": "CodeProOJ-Client-${version}-linux-${arch}.${ext}"
     }
   }
 }
