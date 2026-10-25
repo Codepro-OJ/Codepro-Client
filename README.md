@@ -1,9 +1,9 @@
-# CodeProOJ Client (Windows)
+# CodeProOJ Client (Windows, macOS và Linux)
 
 Ứng dụng desktop độc lập cho CodeProOJ. Mã được viết mới; gói TMATH 1.0.7 chỉ dùng để khảo sát chức năng.
 Repository này được xuất bản tại [Codepro-OJ/Codepro-Client](https://github.com/Codepro-OJ/Codepro-Client). Web trực tuyến nằm tại [Codepro-Web](https://github.com/Codepro-OJ/Codepro-Web); hệ thống thi qua LAN nằm tại [Submit-Offline](https://github.com/Codepro-OJ/Submit-Offline).
 
-## Chức năng bản 1.2.6
+## Chức năng bản 1.2.7
 
 - Tìm và đọc bài tập công khai qua API v2 CodeProOJ.
 - Đăng nhập tài khoản người dùng hoặc quản trị viên theo luồng xác thực v1 của CodeProOJ; hỗ trợ xác thực 2 bước. Giới hạn IP của quản trị viên do máy chủ kiểm tra.
@@ -22,9 +22,9 @@ Repository này được xuất bản tại [Codepro-OJ/Codepro-Client](https://
 - Compiler IDE dùng CodeMirror để soạn C++/Python với tô màu cú pháp, số dòng, tự thụt lề, tìm kiếm, trạng thái con trỏ và terminal kết quả. `Ctrl+Enter` chạy thử, `Ctrl+S` lưu tệp. Bản nháp vẫn tự lưu trên máy, hỗ trợ mở/lưu tệp nguồn.
 - Nút “Chia sẻ cho spectator” trong Compiler IDE tạo liên kết chỉ xem và đồng bộ mã đang viết. Chủ phiên có thể dừng chia sẻ; mục “Chia sẻ mã nguồn” trong trang quản trị liệt kê, sao chép liên kết và thu hồi các phiên đang mở. Liên kết tự hết hạn sau 24 giờ.
 - Khi làm bài, kéo vạch giữa đề và IDE để chỉnh độ rộng hoặc dùng phím mũi tên khi vạch được chọn. Tỉ lệ được nhớ trên máy.
-- Chạy thử C++17 bằng `g++` hoặc Python 3 bằng `py -3` (trên Windows) nếu công cụ đã có trong `PATH`.
+- Chạy thử C++17 bằng `g++` hoặc Python 3 bằng `py -3` trên Windows và `python3` trên macOS/Linux nếu công cụ đã có trong `PATH`.
 - Trong Cài đặt, có thể chọn đường dẫn `g++.exe` và `python.exe`/`py.exe`, kiểm tra phiên bản rồi dùng các compiler đó để chạy thử. Để trống sẽ dùng công cụ trong `PATH`.
-- Kết nối tự động tới máy chủ CodeProOJ cố định, không yêu cầu nhập hoặc lưu địa chỉ máy chủ.
+- Kết nối tự động tới máy chủ CodeProOJ; mặc định dùng gateway cục bộ và có thể đặt `CODEPRO_API_ORIGIN` khi triển khai máy chủ công khai.
 - WebSocket `/ws/live` tự kết nối lại và đồng bộ thay đổi cuộc thi, bài tập, bài nộp từ web sang client. Tín hiệu không chứa dữ liệu riêng tư; client tải dữ liệu mới qua API. Đề đang mở được cập nhật mà không ghi đè mã nguồn.
 
 Liên kết spectator hiện dùng máy chủ cố định `http://127.0.0.1:8888`; chỉ thiết bị truy cập được máy chủ này mới xem được. Cần triển khai backend công khai trước khi chia sẻ cho người ở mạng khác.
@@ -33,27 +33,20 @@ Code chạy thử được thực thi trực tiếp trên máy người dùng th
 
 ## Phát triển và đóng gói
 
-Trong thư mục gốc kho `Codepro-Client`:
+Trong `Codepro-Client`, chạy lệnh phù hợp với hệ điều hành:
 
 ```powershell
 npm ci
 npm start
 npm run dist:win
-npm run publish:local -- C:/path/Codepro-Web
+# Trên macOS: npm run dist:mac
+# Trên Linux: npm run dist:linux
 ```
 
-`npm start` và `npm run dist:win` tự tạo bundle CodeMirror cục bộ bằng esbuild, nên IDE không cần mạng hoặc CDN khi mở ứng dụng.
+`npm start` và các lệnh `dist:*` tự tạo bundle CodeMirror cục bộ bằng esbuild, nên IDE không cần mạng hoặc CDN khi mở ứng dụng. `dist:mac` tạo hai tệp DMG cho Apple Silicon và Intel; `dist:linux` tạo tệp DEB x64 cho Ubuntu/Debian. Các bản này phải được build trên máy macOS/Linux tương ứng, hoặc bằng workflow `Build desktop installers` trong GitHub Actions.
 
-`publish:local` đặt bản Windows portable và `client-manifest.json` trong `frontend/downloads/`. Trang `/client` chỉ bật nút tải khi manifest tồn tại. `/client/download/windows` stream tệp thực thi nên không bị giới hạn 2 MB của bộ phục vụ tệp tĩnh. Khi triển khai VPS, tải tệp đã build lên đúng đường dẫn ghi trong manifest cùng manifest. Docker Compose mount thư mục này vào frontend container nên có thể cập nhật binary mà không build lại image. Tệp `.exe` được bỏ qua bởi Git để tránh làm repository phình lớn. Bản portable chưa được ký số; cần ký trước khi phát hành rộng rãi.
+Sau khi tập hợp các tệp đã build trong `dist/`, chạy `npm run publish:local`. Có thể truyền thư mục nguồn và đích: `node scripts/publish-local.js <nguon> <dich>`. Lệnh sao chép những bản cài tìm thấy và cập nhật `client-manifest.json` trong checkout `Codepro-Web/frontend/downloads/` nằm cạnh `Codepro-Client/`; bản Windows cũ vẫn được giữ nếu chưa build lại. Trang `/client` chỉ bật nút tải cho nền tảng có tệp thực tế, qua `/client/download/<nen-tang>`. Docker Compose mount thư mục download vào frontend container nên có thể cập nhật binary và manifest mà không build lại image. Các tệp `.exe`, `.dmg` và `.deb` được bỏ qua bởi Git.
 
-Địa chỉ API được cố định là `http://127.0.0.1:8888` trong `main.js`; client không dùng địa chỉ từng lưu trong `settings.json`. Bản này dành cho máy đang chạy Web Gateway CodeProOJ tại cổng 8888.
+Hiện chưa có máy chủ CodeProOJ công khai, nên địa chỉ mặc định vẫn là `http://127.0.0.1:8888`. Khi hệ thống được đưa lên internet, đặt biến môi trường `CODEPRO_API_ORIGIN=https://ten-mien-thuc-te` để thử kết nối; phát hành bản cài mới với địa chỉ công khai sau khi xác nhận hoạt động.
 
-Token tài khoản được lưu bằng Electron `safeStorage` khi hệ điều hành hỗ trợ; bản nháp nằm trong `app.getPath('userData')`.
-
-## Kho mã liên quan
-
-Máy chủ và web: https://github.com/Codepro-OJ/Codepro-Web
-
-OJ độc lập cho kỳ thi qua LAN: https://github.com/Codepro-OJ/Submit-Offline
-
-Chạy web trước tại cổng 8888. Xuất bản bản portable bằng đường dẫn kho web ở lệnh trên hoặc biến CODEPRO_WEB_ROOT.
+Token tài khoản được lưu bằng Electron `safeStorage` khi hệ điều hành hỗ trợ; trên Linux, ứng dụng không lưu token nếu Electron chỉ có backend `basic_text`. Bản nháp nằm trong `app.getPath('userData')`. Cần cài `g++` và trình quản lý mật khẩu như GNOME Keyring trên Linux. Bản macOS chưa được ký số/chứng thực Apple, vì vậy hãy ký và notarize trước khi phân phối rộng rãi.

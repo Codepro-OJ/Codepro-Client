@@ -243,7 +243,7 @@ test('statement renderer keeps examples and math readable while sanitizing HTML'
   const katex = { render: (expression, target) => { target.dataset.rendered = expression; } };
   try {
     const box = window.document.getElementById('statement');
-    const aplus = fs.readFileSync(path.join(__dirname, 'fixtures', 'problems', 'APLUS', 'statement', 'statement.md'), 'utf8');
+    const aplus = '# A + B\n\nCho hai số nguyên $A$ và $B$.\n\n## Ví dụ\n\n```text\n1 2\n```\n\n```text\n3\n```\n\n```text\n4 5\n```\n\n```text\n9\n```';
     window.CodeProStatement.render(aplus, box, katex);
     assert.match(box.textContent, /Cho hai số nguyên/);
     assert.equal(box.querySelectorAll('pre code').length, 4);
@@ -257,13 +257,13 @@ test('statement renderer keeps examples and math readable while sanitizing HTML'
   } finally { window.close(); }
 });
 
-test('all local problem statements render without dropping their content', () => {
+test('all local problem statements render without dropping their content', { skip: !fs.existsSync(path.join(__dirname, '..', '..', 'Codepro-Web', 'problem-data', 'problems')) }, () => {
   const dom = new JSDOM('<div id="statement"></div>', { runScripts: 'outside-only' });
   const { window } = dom;
   window.eval(fs.readFileSync(path.join(renderer, 'vendor', 'statement.bundle.js'), 'utf8'));
   const box = window.document.getElementById('statement');
   const katex = { render: (expression, target) => { target.dataset.rendered = expression; } };
-  const root = path.join(__dirname, 'fixtures', 'problems');
+  const root = path.join(__dirname, '..', '..', 'Codepro-Web', 'problem-data', 'problems');
   let count = 0;
   try {
     for (const code of fs.readdirSync(root)) {
