@@ -1,12 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="CodeProOJ">
   <defs>
-    <linearGradient id="surface" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#3978F6"/>
-      <stop offset="1" stop-color="#204CB4"/>
+    <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#153A83"/>
+      <stop offset="1" stop-color="#091A41"/>
+    </linearGradient>
+    <linearGradient id="code" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#7BE9FF"/>
+      <stop offset="1" stop-color="#3198F5"/>
     </linearGradient>
   </defs>
-  <rect width="64" height="64" rx="16" fill="url(#surface)"/>
-  <rect x="1" y="1" width="62" height="62" rx="15" fill="none" stroke="#C7DAFF" stroke-opacity=".28" stroke-width="2"/>
-  <path d="M22 21 12 32l10 11m20-22 10 11-10 11" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="m36 18-8 28" fill="none" stroke="#8CF2E4" stroke-width="5.5" stroke-linecap="round"/>
+  <rect width="64" height="64" rx="16" fill="url(#tile)"/>
+  <path d="M45 17 35 12a9 9 0 0 0-10 1L13 25a10 10 0 0 0 0 14l12 12a9 9 0 0 0 10 1l5-3" fill="none" stroke="url(#code)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="m27 32 8 8 17-18" fill="none" stroke="#46E3B7" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
