@@ -5,7 +5,13 @@ const os = require('node:os');
 const { spawn } = require('node:child_process');
 const WebSocket = require('ws');
 
-const API_ORIGIN = 'http://127.0.0.1:8888';
+const configuredOrigin = new URL(process.env.CODEPRO_API_ORIGIN || 'http://127.0.0.1:8888');
+if (!['http:', 'https:'].includes(configuredOrigin.protocol) ||
+    configuredOrigin.username || configuredOrigin.password ||
+    configuredOrigin.pathname !== '/' || configuredOrigin.search || configuredOrigin.hash) {
+  throw new Error('CODEPRO_API_ORIGIN phải là địa chỉ gốc http(s) hợp lệ.');
+}
+const API_ORIGIN = configuredOrigin.origin;
 const allowedPaths = new Map([
   ['problems', '/api/v2/problems'],
   ['problem', '/api/v2/problem/'],
@@ -137,6 +143,7 @@ async function request({ kind, key, query, body, method: requestedMethod }) {
   try {
     const response = await fetch(url, {
       method,
+      cache: method === 'GET' && (kind === 'problem' || kind === 'problemStatement') ? 'no-store' : 'default',
       headers: { Accept: 'application/json', 'X-CodeProOJ-Surface': 'client', ...(body ? { 'Content-Type': 'application/json' } : {}), ...(token && !['login', 'verify2fa'].includes(kind) ? { Authorization: `Token ${token}` } : {}), ...(kind === 'verify2fa' && challenge?.cookie ? { Cookie: challenge.cookie } : {}) },
       body: body ? JSON.stringify(body) : undefined,
       signal: controller.signal
