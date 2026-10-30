@@ -9,7 +9,7 @@
     "prestart": "npm run build:editor",
     "start": "electron .",
     "pretest": "npm run build:editor",
-    "test": "node --test scripts/renderer-smoke.test.js",
+    "test": "node --test scripts/renderer-smoke.test.js scripts/problem-bank.test.js",
     "predist:win": "npm run build:editor",
     "dist:win": "electron-builder --win portable",
     "publish:local": "node scripts/publish-local.js"
@@ -38,6 +38,7 @@
     "asar": true,
     "files": [
       "main.js",
+      "problem-bank.js",
       "preload.js",
       "renderer/**/*",
       "package.json"

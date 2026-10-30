@@ -4,8 +4,15 @@ const path = require('node:path');
 const os = require('node:os');
 const { spawn } = require('node:child_process');
 const WebSocket = require('ws');
+const { publicPage, readBank, syncBank } = require('./problem-bank');
 
-const API_ORIGIN = 'http://127.0.0.1:8888';
+const configuredOrigin = new URL(process.env.CODEPRO_API_ORIGIN || 'http://127.0.0.1:8888');
+if (!['http:', 'https:'].includes(configuredOrigin.protocol) ||
+    configuredOrigin.username || configuredOrigin.password ||
+    configuredOrigin.pathname !== '/' || configuredOrigin.search || configuredOrigin.hash) {
+  throw new Error('CODEPRO_API_ORIGIN phải là địa chỉ gốc http(s) hợp lệ.');
+}
+const API_ORIGIN = configuredOrigin.origin;
 const allowedPaths = new Map([
   ['problems', '/api/v2/problems'],
   ['problem', '/api/v2/problem/'],
@@ -37,6 +44,7 @@ let liveReconnect = null;
 let liveDelay = 1000;
 let liveConnected = false;
 let shuttingDown = false;
+let bankSync = null;
 
 function emitLive(channel, payload) {
   for (const win of BrowserWindow.getAllWindows()) {
@@ -74,6 +82,7 @@ function connectLive() {
 function accountFile() { return path.join(app.getPath('userData'), 'account.json'); }
 function draftFile() { return path.join(app.getPath('userData'), 'drafts.json'); }
 function compilerFile() { return path.join(app.getPath('userData'), 'compilers.json'); }
+function problemBankFile() { return path.join(app.getPath('userData'), 'public-problems.json'); }
 
 async function compilerPaths() {
   const saved = await readJson(compilerFile(), {});
@@ -125,7 +134,7 @@ function endpoint(kind, key = '', query = {}) {
   return url;
 }
 
-async function request({ kind, key, query, body, method: requestedMethod }) {
+async function request({ kind, key, query, body, method: requestedMethod, anonymous = false }) {
   const method = requestedMethod || (body ? 'POST' : 'GET');
   const writes = { login: ['POST'], verify2fa: ['POST'], submit: ['POST'], contests: ['POST'], contest: ['PUT'], problems: ['POST'], problem: ['PUT'], problemStatement: ['PUT'], contestJoin: ['POST'], contestLeave: ['POST'], userRole: ['POST'], codeShares: ['POST'], codeShare: ['PUT'] };
   if (!['GET', 'POST', 'PUT'].includes(method) || (method !== 'GET' && !writes[kind]?.includes(method))) throw new Error('Thao tác không hợp lệ.');
@@ -137,7 +146,7 @@ async function request({ kind, key, query, body, method: requestedMethod }) {
   try {
     const response = await fetch(url, {
       method,
-      headers: { Accept: 'application/json', 'X-CodeProOJ-Surface': 'client', ...(body ? { 'Content-Type': 'application/json' } : {}), ...(token && !['login', 'verify2fa'].includes(kind) ? { Authorization: `Token ${token}` } : {}), ...(kind === 'verify2fa' && challenge?.cookie ? { Cookie: challenge.cookie } : {}) },
+      headers: { Accept: 'application/json', 'X-CodeProOJ-Surface': 'client', ...(body ? { 'Content-Type': 'application/json' } : {}), ...(token && !anonymous && !['login', 'verify2fa'].includes(kind) ? { Authorization: `Token ${token}` } : {}), ...(kind === 'verify2fa' && challenge?.cookie ? { Cookie: challenge.cookie } : {}) },
       body: body ? JSON.stringify(body) : undefined,
       signal: controller.signal
     });
@@ -153,8 +162,16 @@ async function request({ kind, key, query, body, method: requestedMethod }) {
     }
     return kind === 'login' || kind === 'verify2fa' || kind === 'userProfile' ? payload : payload.data;
   } catch (error) {
-    if (error.name === 'AbortError') throw new Error('Kết nối quá thời gian. Hãy kiểm tra máy chủ và thử lại.');
-    if (error instanceof TypeError) throw new Error('Không kết nối được CodeProOJ. Hãy kiểm tra kết nối mạng.');
+    if (error.name === 'AbortError') {
+      const offline = new Error('Kết nối quá thời gian. Hãy kiểm tra máy chủ và thử lại.');
+      offline.code = 'OFFLINE';
+      throw offline;
+    }
+    if (error instanceof TypeError) {
+      const offline = new Error('Không kết nối được CodeProOJ. Hãy kiểm tra kết nối mạng.');
+      offline.code = 'OFFLINE';
+      throw offline;
+    }
     throw error;
   } finally { clearTimeout(timeout); }
 }
@@ -229,7 +246,18 @@ app.whenReady().then(async () => {
   ipcMain.handle('api', async (_, args) => {
     if (!args || typeof args.kind !== 'string') throw new Error('Yêu cầu không hợp lệ.');
     if (args.kind === 'verify2fa' && (!challenge || challenge.expires < Date.now() || String(args.body?.user_id) !== String(challenge.userId))) throw new Error('Phiên xác thực 2 bước đã hết hạn. Vui lòng đăng nhập lại.');
-    const data = await request(args);
+    let data;
+    try {
+      data = await request(args);
+    } catch (error) {
+      if (error.code !== 'OFFLINE' || args.method && args.method !== 'GET' ||
+          !['problems', 'problem'].includes(args.kind) || args.query?.all) throw error;
+      const bank = await readBank(problemBankFile(), API_ORIGIN);
+      if (!bank) throw error;
+      if (args.kind === 'problems') data = publicPage(bank, args.query);
+      else if (bank.details[args.key]) data = { object: bank.details[args.key], offline: true };
+      else throw error;
+    }
     if (['login', 'verify2fa'].includes(args.kind) && data?.token && data?.user) {
       challenge = null;
       token = data.token;
@@ -240,6 +268,19 @@ app.whenReady().then(async () => {
       await saveAccount(data.user, data.token);
     }
     return data;
+  });
+  ipcMain.handle('bank:status', async () => {
+    const bank = await readBank(problemBankFile(), API_ORIGIN);
+    return bank ? { count: bank.objects.length, updatedAt: bank.updatedAt } : null;
+  });
+  ipcMain.handle('bank:sync', () => {
+    if (!bankSync) {
+      bankSync = syncBank(problemBankFile(), API_ORIGIN,
+        (kind, key, query) => request({ kind, key, query, anonymous: true }),
+        progress => emitLive('bank:progress', progress)
+      ).finally(() => { bankSync = null; });
+    }
+    return bankSync;
   });
   ipcMain.handle('draft:get', async (_, key) => {
     if (!/^[A-Za-z0-9_-]{1,64}:[A-Za-z0-9_-]{1,32}$/.test(key)) return '';

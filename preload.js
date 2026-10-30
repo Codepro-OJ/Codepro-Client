@@ -14,6 +14,13 @@ contextBridge.exposeInMainWorld('client', {
   },
   logout: () => ipcRenderer.invoke('logout'),
   api: args => ipcRenderer.invoke('api', args),
+  bankStatus: () => ipcRenderer.invoke('bank:status'),
+  syncBank: () => ipcRenderer.invoke('bank:sync'),
+  onBankProgress: callback => {
+    const listener = (_, progress) => callback(progress);
+    ipcRenderer.on('bank:progress', listener);
+    return () => ipcRenderer.removeListener('bank:progress', listener);
+  },
   getDraft: key => ipcRenderer.invoke('draft:get', key),
   setDraft: (key, source) => ipcRenderer.invoke('draft:set', key, source),
   openFile: () => ipcRenderer.invoke('file:open'),

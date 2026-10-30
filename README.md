@@ -6,6 +6,7 @@ Repository này được xuất bản tại [Codepro-OJ/Codepro-Client](https://
 ## Chức năng bản 1.2.6
 
 - Tìm và đọc bài tập công khai qua API v2 CodeProOJ.
+- Trong Cài đặt, nút “Tải kho bài tập” đồng bộ bài công khai từ server vào `public-problems.json` trong thư mục dữ liệu ứng dụng. Khi mất kết nối, client đọc danh sách và đề đã lưu từ tệp này; bài thi riêng và testcase không được lưu. Nộp bài và xem kết quả vẫn cần server.
 - Đăng nhập tài khoản người dùng hoặc quản trị viên theo luồng xác thực v1 của CodeProOJ; hỗ trợ xác thực 2 bước. Giới hạn IP của quản trị viên do máy chủ kiểm tra.
 - Xem toàn bộ cuộc thi công khai, lịch thi, bài thi, tham gia/rời thi và bảng xếp hạng. Nộp bài trong ngữ cảnh cuộc thi.
 - Nút “Tham gia” trên danh sách hoặc trang chi tiết đưa thí sinh vào bài A ngay khi đăng ký thành công. Không gian cuộc thi có thanh chuyển bài, đề bài và Compiler IDE; chuyển bài giữ bản nháp riêng, nút quay lại mở danh sách cuộc thi. Bài thi chưa mở trước khi tham gia hoặc trước giờ bắt đầu.
@@ -24,7 +25,7 @@ Repository này được xuất bản tại [Codepro-OJ/Codepro-Client](https://
 - Khi làm bài, kéo vạch giữa đề và IDE để chỉnh độ rộng hoặc dùng phím mũi tên khi vạch được chọn. Tỉ lệ được nhớ trên máy.
 - Chạy thử C++17 bằng `g++` hoặc Python 3 bằng `py -3` (trên Windows) nếu công cụ đã có trong `PATH`.
 - Trong Cài đặt, có thể chọn đường dẫn `g++.exe` và `python.exe`/`py.exe`, kiểm tra phiên bản rồi dùng các compiler đó để chạy thử. Để trống sẽ dùng công cụ trong `PATH`.
-- Kết nối tự động tới máy chủ CodeProOJ cố định, không yêu cầu nhập hoặc lưu địa chỉ máy chủ.
+- Kết nối tự động tới máy chủ CodeProOJ; mặc định dùng gateway cục bộ, có thể đặt `CODEPRO_API_ORIGIN` trước khi mở ứng dụng.
 - WebSocket `/ws/live` tự kết nối lại và đồng bộ thay đổi cuộc thi, bài tập, bài nộp từ web sang client. Tín hiệu không chứa dữ liệu riêng tư; client tải dữ liệu mới qua API. Đề đang mở được cập nhật mà không ghi đè mã nguồn.
 
 Liên kết spectator hiện dùng máy chủ cố định `http://127.0.0.1:8888`; chỉ thiết bị truy cập được máy chủ này mới xem được. Cần triển khai backend công khai trước khi chia sẻ cho người ở mạng khác.
@@ -46,9 +47,9 @@ npm run publish:local -- C:/path/Codepro-Web
 
 `publish:local` đặt bản Windows portable và `client-manifest.json` trong `frontend/downloads/`. Trang `/client` chỉ bật nút tải khi manifest tồn tại. `/client/download/windows` stream tệp thực thi nên không bị giới hạn 2 MB của bộ phục vụ tệp tĩnh. Khi triển khai VPS, tải tệp đã build lên đúng đường dẫn ghi trong manifest cùng manifest. Docker Compose mount thư mục này vào frontend container nên có thể cập nhật binary mà không build lại image. Tệp `.exe` được bỏ qua bởi Git để tránh làm repository phình lớn. Bản portable chưa được ký số; cần ký trước khi phát hành rộng rãi.
 
-Địa chỉ API được cố định là `http://127.0.0.1:8888` trong `main.js`; client không dùng địa chỉ từng lưu trong `settings.json`. Bản này dành cho máy đang chạy Web Gateway CodeProOJ tại cổng 8888.
+Địa chỉ API mặc định là `http://127.0.0.1:8888`. Đặt `CODEPRO_API_ORIGIN=https://ten-mien-server` nếu server chạy ở nơi khác; bản cài cần mở với biến môi trường này. Kho bài đã đồng bộ được gắn với địa chỉ server để không dùng lẫn dữ liệu giữa các server.
 
-Token tài khoản được lưu bằng Electron `safeStorage` khi hệ điều hành hỗ trợ; bản nháp nằm trong `app.getPath('userData')`.
+Token tài khoản được lưu bằng Electron `safeStorage` khi hệ điều hành hỗ trợ; bản nháp và kho bài đã đồng bộ nằm trong `app.getPath('userData')` dưới dạng tệp JSON, không dùng SQL.
 
 ## Kho mã liên quan
 

@@ -146,8 +146,9 @@ async function loadProblems() {
       button.addEventListener('click', () => { setContestFocus(null); selectProblem(item.code); });
       container.append(button);
     }
-    $('connection-text').textContent = (await window.client.liveStatus()) ? 'Đã kết nối CodeProOJ · trực tiếp' : 'Đã kết nối CodeProOJ · đang nối lại';
-    document.querySelector('.status-dot').classList.add('online');
+    $('connection-text').textContent = data?.offline ? 'Đang đọc kho bài trên máy' :
+      (await window.client.liveStatus()) ? 'Đã kết nối CodeProOJ · trực tiếp' : 'Đã kết nối CodeProOJ · đang nối lại';
+    document.querySelector('.status-dot').classList.toggle('online', !data?.offline);
   } catch (err) {
     $('problem-items').innerHTML = '<div class="placeholder">Không tải được danh sách bài.</div>';
     $('connection-text').textContent = 'Mất kết nối';
@@ -210,6 +211,7 @@ async function selectProblem(code) {
     $('problem-meta').textContent = `${problem.points ?? 100} điểm · ${problem.time_limit ?? 1}s · ${Math.round((problem.memory_limit ?? 262144) / 1024)} MB`;
     if (state.contestKey) $('problem-meta').append(element('span', `· ${state.contest?.name || state.contestKey}`));
     renderStatement(problem.description);
+    if (data?.offline) notice('Đang đọc đề đã lưu trên máy. Cần kết nối server để nộp bài.');
     await loadDraft();
   } catch (err) { $('statement-content').textContent = 'Không tải được đề bài.'; notice(errorText(err), true); }
 }
@@ -968,6 +970,31 @@ function showView(view) {
 async function init() {
   initWorkspaceResizer();
   initCompilerSettings();
+  if (window.client.onBankProgress) window.client.onBankProgress(({ current, total }) => {
+    $('problem-bank-status').textContent = `Đang tải đề ${current} / ${total}…`;
+  });
+  const updateBankStatus = async () => {
+    if (!window.client.bankStatus) return;
+    const bank = await window.client.bankStatus();
+    $('problem-bank-status').textContent = bank
+      ? `${bank.count} bài công khai đã lưu · ${new Date(bank.updatedAt).toLocaleString('vi-VN')}`
+      : 'Chưa có kho bài trên máy.';
+  };
+  await updateBankStatus();
+  $('sync-problem-bank').addEventListener('click', async () => {
+    const button = $('sync-problem-bank');
+    setBusy(button, true, 'Tải kho bài tập');
+    $('problem-bank-status').textContent = 'Đang kết nối máy chủ…';
+    try {
+      const result = await window.client.syncBank();
+      await updateBankStatus();
+      notice(`Đã lưu ${result.count} bài công khai trên máy.`);
+      if (state.view === 'problems') loadProblems();
+    } catch (error) {
+      $('problem-bank-status').textContent = errorText(error);
+      notice(errorText(error), true);
+    } finally { setBusy(button, false, 'Tải kho bài tập'); }
+  });
   state.account = await window.client.account(); updateAccount();
   let pendingTopics = new Set();
   let refreshTimer = null;
